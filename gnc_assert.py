@@ -47,7 +47,7 @@ def main():
             date_str = self.element.getElementsByTagName('trn:date-posted')[0].\
                 getElementsByTagName('ts:date')[0].firstChild.data
 
-            return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S').date()
+            return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
         def desc(self):
             return get(self.element, 'trn:description').data
