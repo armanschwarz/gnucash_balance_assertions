@@ -57,6 +57,7 @@ def main():
             return [(get(x, 'split:account').data, get(x, 'split:value').data) for x in splits]
 
     error_count = 0
+    assertions_count = 0
     for act_name, act_id in act_name_to_id_map:
         transactions = []
         for transaction_element in doc.getElementsByTagName('gnc:transaction'):
@@ -68,6 +69,7 @@ def main():
         assertions.sort(key = lambda x : x[2])
 
         print("found {} assertions in account '{}' ({})".format(len(assertions), act_name, act_id))
+        assertions_count += len(assertions)
         for assertion in assertions:
             assertion_amount = float(regex.search(args.assertion_regex, assertion[3]).group(0))
             assertion_date = assertion[2]
@@ -83,7 +85,7 @@ def main():
 
             print(description)
 
-    print("found {} errors!".format(error_count))
+    print("found {} errors in {} assertions!".format(error_count, assertions_count))
 
 if __name__ == "__main__":
     main()
