@@ -37,7 +37,7 @@ def main():
     accounts = doc.getElementsByTagName('gnc:account')
 
     # build a mapping from account name to account id
-    act_name_to_id_map = dict([(get(x, 'act:name').data, get(x, 'act:id').data) for x in accounts])
+    act_name_to_id_map = [(get(x, 'act:name').data, get(x, 'act:id').data) for x in accounts]
 
     class Transaction:
         def __init__(self, element):
@@ -57,7 +57,7 @@ def main():
             return [(get(x, 'split:account').data, get(x, 'split:value').data) for x in splits]
 
     error_count = 0
-    for act_name, act_id in act_name_to_id_map.items():
+    for act_name, act_id in act_name_to_id_map:
         transactions = []
         for transaction_element in doc.getElementsByTagName('gnc:transaction'):
             trn = Transaction(transaction_element)
@@ -67,7 +67,7 @@ def main():
         assertions = [x for x in transactions if regex.search(args.assertion_regex, x[3])]
         assertions.sort(key = lambda x : x[2])
 
-        print("found {} assertions in account '{}':".format(len(assertions), act_name))
+        print("found {} assertions in account '{}' ({})".format(len(assertions), act_name, act_id))
         for assertion in assertions:
             assertion_amount = float(regex.search(args.assertion_regex, assertion[3]).group(0))
             assertion_date = assertion[2]
