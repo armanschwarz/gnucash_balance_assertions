@@ -2,21 +2,10 @@
 
 import argparse
 import datetime
-import gzip
 import regex
 from xml.dom import minidom
 
-def read(filename):
-    '''
-    Read a gnucash file, which could be gzipped, or not
-    '''
-    try:
-        return gzip.open(filename, 'r').read()
-    except OSError:
-        return open(filename, 'r').read()
-
-def get(element, name):
-    return element.getElementsByTagName(name)[0].firstChild
+import util
 
 def amount(amount_string):
     # e.g. 12345/100
@@ -30,14 +19,14 @@ def main():
     parser.add_argument('-d', type=int, default=2, help='number of decimal places for comparison')
     args = parser.parse_args()
 
-    doc = minidom.parseString(read(args.gnucash_file))
+    doc = minidom.parseString(util.read(args.gnucash_file))
 
     assert doc.getElementsByTagName('gnc:book')[0].attributes['version'].value == '2.0.0'
 
     accounts = doc.getElementsByTagName('gnc:account')
 
     # build a mapping from account name to account id
-    act_name_to_id_map = [(get(x, 'act:name').data, get(x, 'act:id').data) for x in accounts]
+    act_name_to_id_map = [(util.get(x, 'act:name').data, util.get(x, 'act:id').data) for x in accounts]
 
     class Transaction:
         def __init__(self, element):
@@ -50,11 +39,11 @@ def main():
             return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
         def desc(self):
-            return get(self.element, 'trn:description').data
+            return util.get(self.element, 'trn:description').data
 
         def get_splits(self):
             splits = self.element.getElementsByTagName('trn:split')
-            return [(get(x, 'split:account').data, get(x, 'split:value').data) for x in splits]
+            return [(util.get(x, 'split:account').data, util.get(x, 'split:value').data) for x in splits]
 
     error_count = 0
     assertions_count = 0
