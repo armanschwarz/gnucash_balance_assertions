@@ -18,7 +18,6 @@ def main():
 
     slot_values = doc.getElementsByTagName('slot')
 
-    error_count = 0
     file_paths = []
 
     for x in slot_values:
@@ -37,7 +36,7 @@ def main():
     for e in errors:
         print("Failed to find {}...".format(e))
 
-    print("found {} errors in {} files!".format(error_count, len(file_paths)))
+    print("found {} errors in {} files!".format(len(errors), len(file_paths)))
 
 if __name__ == "__main__":
     main()
