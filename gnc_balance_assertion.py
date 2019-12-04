@@ -32,16 +32,28 @@ def main():
         def __init__(self, element):
             self.element = element
 
+        def is_valid(self):
+            if util.get(self.element, 'trn:description') is None:
+                return False
+
+            return True
+
         def date(self):
+            assert self.is_valid()
+
             date_str = self.element.getElementsByTagName('trn:date-posted')[0].\
                 getElementsByTagName('ts:date')[0].firstChild.data
 
             return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
         def desc(self):
+            assert self.is_valid()
+
             return util.get(self.element, 'trn:description').data
 
         def get_splits(self):
+            assert self.is_valid()
+
             splits = self.element.getElementsByTagName('trn:split')
             return [(util.get(x, 'split:account').data, util.get(x, 'split:value').data) for x in splits]
 
@@ -51,7 +63,9 @@ def main():
         transactions = []
         for transaction_element in doc.getElementsByTagName('gnc:transaction'):
             trn = Transaction(transaction_element)
-            transactions += [(x[0], x[1], trn.date(), trn.desc()) for x in trn.get_splits() if x[0] == act_id]
+
+            if trn.is_valid():
+                transactions += [(x[0], x[1], trn.date(), trn.desc()) for x in trn.get_splits() if x[0] == act_id]
 
         # now find balance assertions in the list of transactions
         assertions = [x for x in transactions if regex.search(args.assertion_regex, x[3])]
