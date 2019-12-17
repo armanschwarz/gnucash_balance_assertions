@@ -12,4 +12,7 @@ def read(filename):
         return open(filename, 'r').read()
 
 def get(element, name):
-    return element.getElementsByTagName(name)[0].firstChild
+    try:
+        return element.getElementsByTagName(name)[0].firstChild.data
+    except IndexError:
+        return None

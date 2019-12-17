@@ -7,11 +7,6 @@ from xml.dom import minidom
 
 import util
 
-def amount(amount_string):
-    # e.g. 12345/100
-    match = amount_string.split('/')
-    return float(match[0]) / float(match[1])
-
 def main():
     parser = argparse.ArgumentParser(description='Balance assertions for GnuCash')
     parser.add_argument('gnucash_file')
@@ -26,7 +21,45 @@ def main():
     accounts = doc.getElementsByTagName('gnc:account')
 
     # build a mapping from account name to account id
-    act_name_to_id_map = [(util.get(x, 'act:name').data, util.get(x, 'act:id').data) for x in accounts]
+    act_name_to_id_map = [(util.get(x, 'act:name'), util.get(x, 'act:id')) for x in accounts]
+
+    class Split:
+        def __init__(
+            self,
+            parent_transaction,
+            account,
+            value,
+            memo):
+
+            self.transaction = parent_transaction
+            self.account = account
+            amount_match = value.split('/')
+            self.amount = float(amount_match[0]) / float(amount_match[1])
+
+            assertion_desc_match = regex.search(
+                args.assertion_regex,
+                self.transaction.desc())
+
+            assertion_memo_match = regex.search(
+                args.assertion_regex,
+                memo if memo else '')
+
+            assert not bool(assertion_desc_match) or not bool(assertion_memo_match)
+
+            if assertion_desc_match:
+                assertion_amount_string = assertion_desc_match.group(0)
+            elif assertion_memo_match:
+                assertion_amount_string = assertion_memo_match.group(0)
+            else:
+                assertion_amount_string = None
+
+            if assertion_amount_string:
+                self.assertion_amount = float(assertion_amount_string)
+            else:
+                self.assertion_amount = None
+
+        def is_assertion(self):
+            return bool(self.assertion_amount)
 
     class Transaction:
         def __init__(self, element):
@@ -49,40 +82,40 @@ def main():
         def desc(self):
             assert self.is_valid()
 
-            return util.get(self.element, 'trn:description').data
+            return util.get(self.element, 'trn:description')
 
         def get_splits(self):
             assert self.is_valid()
 
-            splits = self.element.getElementsByTagName('trn:split')
-            return [(util.get(x, 'split:account').data, util.get(x, 'split:value').data) for x in splits]
+            elements = self.element.getElementsByTagName('trn:split')
+            return [Split(self, util.get(x, 'split:account'), util.get(x, 'split:value'), util.get(x, 'split:memo')) for x in elements]
 
     error_count = 0
     assertions_count = 0
     for act_name, act_id in act_name_to_id_map:
-        transactions = []
+        splits = []
         for transaction_element in doc.getElementsByTagName('gnc:transaction'):
             trn = Transaction(transaction_element)
 
             if trn.is_valid():
-                transactions += [(x[0], x[1], trn.date(), trn.desc()) for x in trn.get_splits() if x[0] == act_id]
+                splits += [s for s in trn.get_splits() if s.account == act_id]
 
         # now find balance assertions in the list of transactions
-        assertions = [x for x in transactions if regex.search(args.assertion_regex, x[3])]
-        assertions.sort(key = lambda x : x[2])
+        assertions = [s for s in splits if s.is_assertion()]
+        assertions.sort(key = lambda s : s.transaction.date())
 
         print("found {} assertions in account '{}' ({})".format(len(assertions), act_name, act_id))
         assertions_count += len(assertions)
         for assertion in assertions:
-            assertion_amount = float(regex.search(args.assertion_regex, assertion[3]).group(0))
-            assertion_date = assertion[2]
-            actual_amount = round(sum([amount(x[1]) for x in transactions if x[2] <= assertion_date]), args.d)
+            actual_amount = round(
+                sum([s.amount for s in splits if s.transaction.date() <= assertion.transaction.date()]),
+                args.d)
 
-            error = True if abs(actual_amount - assertion_amount) > 0 else False
+            error = True if abs(actual_amount - assertion.assertion_amount) > 0 else False
             error_count += int(error)
             description = "    {}: checking value {} against balance of {}...{}".format(
-                assertion_date,
-                assertion_amount,
+                assertion.transaction.desc(),
+                assertion.assertion_amount,
                 actual_amount,
                 "ERROR" if error else "OK")
 
