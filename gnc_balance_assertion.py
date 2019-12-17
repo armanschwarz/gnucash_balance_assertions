@@ -41,7 +41,7 @@ def main():
 
             assertion_desc_match = regex.search(
                 args.assertion_regex,
-                self.transaction.desc())
+                self.transaction.desc)
 
             assertion_memo_match = regex.search(
                 args.assertion_regex,
@@ -66,32 +66,16 @@ def main():
 
     class Transaction:
         def __init__(self, element):
-            self.element = element
+            assert util.get(element, 'trn:description') is not None
 
-        def is_valid(self):
-            if util.get(self.element, 'trn:description') is None:
-                return False
-
-            return True
-
-        def date(self):
-            assert self.is_valid()
-
-            date_str = self.element.getElementsByTagName('trn:date-posted')[0].\
+            date_str = element.getElementsByTagName('trn:date-posted')[0].\
                 getElementsByTagName('ts:date')[0].firstChild.data
 
-            return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            self.date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            self.desc = util.get(element, 'trn:description')
 
-        def desc(self):
-            assert self.is_valid()
-
-            return util.get(self.element, 'trn:description')
-
-        def get_splits(self):
-            assert self.is_valid()
-
-            elements = self.element.getElementsByTagName('trn:split')
-            return [Split(self, x) for x in elements]
+            split_elements = element.getElementsByTagName('trn:split')
+            self.splits = [Split(self, x) for x in split_elements]
 
     error_count = 0
     assertions_count = 0
@@ -99,9 +83,9 @@ def main():
     all_splits = []
     for transaction_element in doc.getElementsByTagName('gnc:transaction'):
         trn = Transaction(transaction_element)
-        all_splits += trn.get_splits()
+        all_splits += trn.splits
 
-    comp = lambda s : s.transaction.date()
+    comp = lambda s : s.transaction.date
     all_splits.sort(key=comp)
 
     for act_name, act_id in act_name_to_id_map:
@@ -120,7 +104,7 @@ def main():
 
             for s in splits[i:]:
 
-                if s.transaction.date() <= assertion.transaction.date():
+                if s.transaction.date <= assertion.transaction.date:
                     balance = round(balance + s.amount, args.d)
                     i += 1
                 else:
@@ -129,7 +113,7 @@ def main():
             error = True if abs(balance - assertion.assertion_amount) > 0 else False
             error_count += int(error)
             description = "    {}: checking value {} against balance of {}...{}".format(
-                assertion.transaction.desc(),
+                assertion.transaction.desc,
                 assertion.assertion_amount,
                 balance,
                 "ERROR" if error else "OK")
