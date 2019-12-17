@@ -27,9 +27,12 @@ def main():
         def __init__(
             self,
             parent_transaction,
-            account,
-            value,
-            memo):
+            split_element):
+
+            account = util.get(split_element, 'split:account')
+            value = util.get(split_element, 'split:value')
+            memo = util.get(split_element, 'split:memo')
+            id = util.get(split_element, 'split:id')
 
             self.transaction = parent_transaction
             self.account = account
@@ -88,35 +91,47 @@ def main():
             assert self.is_valid()
 
             elements = self.element.getElementsByTagName('trn:split')
-            return [Split(self, util.get(x, 'split:account'), util.get(x, 'split:value'), util.get(x, 'split:memo')) for x in elements]
+            return [Split(self, x) for x in elements]
 
     error_count = 0
     assertions_count = 0
-    for act_name, act_id in act_name_to_id_map:
-        splits = []
-        for transaction_element in doc.getElementsByTagName('gnc:transaction'):
-            trn = Transaction(transaction_element)
 
-            if trn.is_valid():
-                splits += [s for s in trn.get_splits() if s.account == act_id]
+    all_splits = []
+    for transaction_element in doc.getElementsByTagName('gnc:transaction'):
+        trn = Transaction(transaction_element)
+        all_splits += trn.get_splits()
+
+    comp = lambda s : s.transaction.date()
+    all_splits.sort(key=comp)
+
+    for act_name, act_id in act_name_to_id_map:
+        splits = [s for s in all_splits if s.account == act_id]
 
         # now find balance assertions in the list of transactions
         assertions = [s for s in splits if s.is_assertion()]
-        assertions.sort(key = lambda s : s.transaction.date())
 
         print("found {} assertions in account '{}' ({})".format(len(assertions), act_name, act_id))
         assertions_count += len(assertions)
-        for assertion in assertions:
-            actual_amount = round(
-                sum([s.amount for s in splits if s.transaction.date() <= assertion.transaction.date()]),
-                args.d)
 
-            error = True if abs(actual_amount - assertion.assertion_amount) > 0 else False
+        balance = 0
+        i = 0
+
+        for assertion in assertions:
+
+            for s in splits[i:]:
+
+                if s.transaction.date() <= assertion.transaction.date():
+                    balance = round(balance + s.amount, args.d)
+                    i += 1
+                else:
+                    break
+
+            error = True if abs(balance - assertion.assertion_amount) > 0 else False
             error_count += int(error)
             description = "    {}: checking value {} against balance of {}...{}".format(
                 assertion.transaction.desc(),
                 assertion.assertion_amount,
-                actual_amount,
+                balance,
                 "ERROR" if error else "OK")
 
             print(description)
