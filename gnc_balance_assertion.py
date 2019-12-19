@@ -40,11 +40,11 @@ def main():
             self.amount = float(amount_match[0]) / float(amount_match[1])
 
             assertion_desc_match = regex.search(
-                args.assertion_regex,
+                '(' + args.assertion_regex + ')',
                 self.transaction.desc)
 
             assertion_memo_match = regex.search(
-                args.assertion_regex,
+                '(' + args.assertion_regex + ')',
                 memo if memo else '')
 
             assert not bool(assertion_desc_match) or not bool(assertion_memo_match)
