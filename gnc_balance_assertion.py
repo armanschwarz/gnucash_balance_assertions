@@ -62,7 +62,7 @@ def main():
                 self.assertion_amount = None
 
         def is_assertion(self):
-            return bool(self.assertion_amount)
+            return self.assertion_amount is not None
 
     class Transaction:
         def __init__(self, element):
