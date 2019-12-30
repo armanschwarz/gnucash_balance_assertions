@@ -4,7 +4,7 @@ from xml.dom import minidom
 import argparse
 import datetime
 import pandas
-import regex
+import re
 
 import util
 
@@ -44,7 +44,7 @@ def main():
             self.decimal_places = amount_match[1].count('0')
             self.amount = round(numerator / denominator, self.decimal_places)
 
-            assertion_desc_match = regex.search(
+            assertion_desc_match = re.search(
                 '(' + args.assertion_amount_regex + ')',
                 self.transaction.desc)
 
@@ -58,8 +58,7 @@ def main():
             self.assertion_start = pandas.to_datetime('1900-01-01')
 
             if args.assertion_start_regex is not None:
-                print(self.transaction.desc)
-                assertion_start_match = regex.search(
+                assertion_start_match = re.search(
                     '(' + args.assertion_start_regex + ')',
                     self.transaction.desc)
 
@@ -119,8 +118,6 @@ def main():
                 balance,
                 assertion.assertion_start,
                 "ERROR" if error else "OK")
-
-            print(description)
 
     print("found {} errors in {} assertions!".format(error_count, assertions_count))
 
