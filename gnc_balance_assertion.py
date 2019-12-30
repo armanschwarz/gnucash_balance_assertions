@@ -56,14 +56,16 @@ def main():
                 return # don't bother with the rest
 
             self.assertion_start = pandas.to_datetime('1900-01-01')
+
             if args.assertion_start_regex is not None:
+                print(self.transaction.desc)
                 assertion_start_match = regex.search(
                     '(' + args.assertion_start_regex + ')',
                     self.transaction.desc)
 
                 if assertion_start_match:
                     assertion_start_string = assertion_start_match.group(0)
-                    self.assertion_start = pandas.to_datetime(assertion_amount_string)
+                    self.assertion_start = pandas.to_datetime(assertion_start_string)
 
         def is_assertion(self):
             return self.assertion_amount is not None
