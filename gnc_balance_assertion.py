@@ -97,8 +97,9 @@ def main():
         # now find balance assertions in the list of transactions
         assertions = [s for s in all_splits if s.account == act_id and s.is_assertion()]
 
-        print("found {} assertions in account '{}' ({})".format(len(assertions), act_name, act_id))
-        assertions_count += len(assertions)
+        if len(assertions):
+            print("Found {} assertions in account '{}' ({}):".format(len(assertions), act_name, act_id))
+            assertions_count += len(assertions)
 
         for assertion in assertions:
             splits_subset = splits_df[
@@ -112,12 +113,14 @@ def main():
 
             error = True if abs(balance - assertion.assertion_amount) > 0 else False
             error_count += int(error)
-            description = "    {}: checking value {} against balance of {} (since {})...{}".format(
-                assertion.transaction.desc,
+            description = "\tAssertion of {} against balance of {} ({} - {})...{}".format(
                 assertion.assertion_amount,
                 balance,
-                assertion.assertion_start,
+                assertion.assertion_start.date(),
+                assertion.transaction.date.date(),
                 "ERROR" if error else "OK")
+
+            print(description)
 
     print("found {} errors in {} assertions!".format(error_count, assertions_count))
 
