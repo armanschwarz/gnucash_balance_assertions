@@ -30,13 +30,13 @@ def main():
 
             file_paths.append(os.path.join(args.base_path, rel_path))
 
-    print("found {} files to search...".format(len(file_paths)))
+    print("Found {} files to search...".format(len(file_paths)))
     errors = [x for x in file_paths if not os.path.exists(x)]
 
     for e in errors:
         print("Failed to find {}...".format(e))
 
-    print("found {} errors in {} files!".format(len(errors), len(file_paths)))
+    print("Found {} errors in {} files!".format(len(errors), len(file_paths)))
 
 if __name__ == "__main__":
     main()

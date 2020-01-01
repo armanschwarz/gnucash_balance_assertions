@@ -76,7 +76,7 @@ def main():
             date_str = element.getElementsByTagName('trn:date-posted')[0].\
                 getElementsByTagName('ts:date')[0].firstChild.data
 
-            self.date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            self.date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S %z').replace(tzinfo=None)
             self.desc = util.get(element, 'trn:description')
 
             split_elements = element.getElementsByTagName('trn:split')
