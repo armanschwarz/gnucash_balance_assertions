@@ -16,6 +16,7 @@ def main():
     # parser.add_argument('-d', type=int, default=2, help='number of decimal places for comparison')
     args = parser.parse_args()
 
+    print("parsing {}...".format(args.gnucash_file))
     doc = minidom.parseString(util.read(args.gnucash_file))
 
     assert doc.getElementsByTagName('gnc:book')[0].attributes['version'].value == '2.0.0'
