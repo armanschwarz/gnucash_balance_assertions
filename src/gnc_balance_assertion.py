@@ -72,13 +72,13 @@ def main():
 
     class Transaction:
         def __init__(self, element):
-            assert util.get(element, 'trn:description') is not None
-
             date_str = element.getElementsByTagName('trn:date-posted')[0].\
                 getElementsByTagName('ts:date')[0].firstChild.data
 
             self.date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S %z').replace(tzinfo=None)
             self.desc = util.get(element, 'trn:description')
+            if self.desc is None:
+                self.desc = ''
 
             split_elements = element.getElementsByTagName('trn:split')
             self.splits = [Split(self, x) for x in split_elements]

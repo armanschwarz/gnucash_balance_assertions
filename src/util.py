@@ -13,6 +13,11 @@ def read(filename):
 
 def get(element, name):
     try:
-        return element.getElementsByTagName(name)[0].firstChild.data
+        first_child = element.getElementsByTagName(name)[0].firstChild
     except IndexError:
         return None
+
+    if first_child is None:
+        return None
+
+    return first_child.data
