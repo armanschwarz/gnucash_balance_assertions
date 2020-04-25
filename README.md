@@ -1,4 +1,4 @@
-# Usage
+# GnuCash Tools
 
 ## Balance Assertions
 For help:
