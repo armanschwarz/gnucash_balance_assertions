@@ -23,8 +23,8 @@ def main():
 
     accounts = doc.getElementsByTagName('gnc:account')
 
-    # build a mapping from account name to account id
-    act_name_to_id_map = [(util.get(x, 'act:name'), util.get(x, 'act:id')) for x in accounts]
+    # build a mapping from account id to name and parent
+    act_map = {util.get(x, 'act:id') : (util.get(x, 'act:name'), util.get(x, 'act:parent')) for x in accounts}
 
     class Split:
         def __init__(
@@ -94,12 +94,22 @@ def main():
     splits_df = pandas.DataFrame([(s.transaction.date, s.amount, s.account, s.decimal_places) for s in all_splits])
     splits_df.columns = ['Date', 'Amount', 'Account', 'DecimalPlaces']
 
-    for act_name, act_id in act_name_to_id_map:
+    def get_long_name(act_id):
+        name = act_map[act_id][0]
+        parent = act_map[act_id][1]
+
+        while parent is not None:
+            name = act_map[parent][0] + ':' + name
+            parent = act_map[parent][1]
+
+        return name
+
+    for act_id, (act_name, act_parent) in act_map.items():
         # now find balance assertions in the list of transactions
         assertions = [s for s in all_splits if s.account == act_id and s.is_assertion()]
 
         if len(assertions):
-            print("Found {} assertions in account '{}' ({}):".format(len(assertions), act_name, act_id))
+            print("Found {} assertions in: {}".format(len(assertions), get_long_name(act_id)))
             assertions_count += len(assertions)
 
         for assertion in assertions:
@@ -112,7 +122,7 @@ def main():
                 splits_subset.Amount.sum(),
                 splits_subset.DecimalPlaces.max())
 
-            error = True if abs(balance - assertion.assertion_amount) > 0 else False
+            error = abs(balance - assertion.assertion_amount) > 0
             error_count += int(error)
             description = "\tAssertion of {} against balance of {} ({} - {})...{}".format(
                 assertion.assertion_amount,
