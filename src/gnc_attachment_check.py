@@ -28,6 +28,10 @@ def main():
                 urllib.parse.urlparse(
                     x.getElementsByTagName('slot:value')[0].firstChild.data).path)
 
+            # remove leading slashes as this breaks os.path.join
+            while rel_path[0] == '/':
+                rel_path = rel_path[1:]
+
             file_paths.append(os.path.join(args.base_path, rel_path))
 
     print("Found {} files to search in base path '{}'...".format(len(file_paths), args.base_path))
