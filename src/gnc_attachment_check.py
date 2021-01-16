@@ -30,7 +30,7 @@ def main():
 
             file_paths.append(os.path.join(args.base_path, rel_path))
 
-    print("Found {} files to search...".format(len(file_paths)))
+    print("Found {} files to search in base path '{}'...".format(len(file_paths), args.base_path))
     errors = [x for x in file_paths if not os.path.exists(x)]
 
     for e in errors:
