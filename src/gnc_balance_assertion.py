@@ -108,9 +108,7 @@ def main():
         # now find balance assertions in the list of transactions
         assertions = [s for s in all_splits if s.account == act_id and s.is_assertion()]
 
-        if len(assertions):
-            print("Found {} assertions in: {}".format(len(assertions), get_long_name(act_id)))
-            assertions_count += len(assertions)
+        error_messages = []
 
         for assertion in assertions:
             splits_subset = splits_df[
@@ -122,16 +120,26 @@ def main():
                 splits_subset.Amount.sum(),
                 splits_subset.DecimalPlaces.max())
 
-            error = abs(balance - assertion.assertion_amount) > 0
-            error_count += int(error)
-            description = "\tAssertion of {} against balance of {} ({} - {})...{}".format(
-                assertion.assertion_amount,
-                balance,
-                assertion.assertion_start.date(),
-                assertion.transaction.date.date(),
-                "ERROR" if error else "OK")
+            if abs(balance - assertion.assertion_amount) > 0:
+                error_count += 1
+                description = "\tERROR: Assertion of {} against balance of {} ({} - {})".format(
+                    assertion.assertion_amount,
+                    balance,
+                    assertion.assertion_start.date(),
+                    assertion.transaction.date.date())
 
-            print(description)
+                error_messages.append(description)
+
+        if len(assertions):
+            print("Found {} assertions and {} errors in: {}".format(
+                len(assertions),
+                len(error_messages),
+                get_long_name(act_id)))
+
+            for msg in error_messages:
+                print(msg)
+
+            assertions_count += len(assertions)
 
     print("found {} errors in {} assertions!".format(error_count, assertions_count))
 
